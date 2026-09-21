@@ -20,9 +20,28 @@
 
 CityGuards implements a resilient, decoupled multi-cloud architecture spanning **Microsoft Azure** (compute, serverless event-driven processing, and media storage) and **Google Cloud Platform** (synchronous ACID state and real-time incident document persistence).
 
-<p align="center">
-  <img src="docs/architecture.svg" width="100%" alt="CityGuards Hybrid Multi-Cloud Architecture Diagram" />
-</p>
+```mermaid
+graph LR
+    subgraph Client ["Client Layer"]
+        A["Citizen Web App<br/>(Next.js / PWA)"]
+    end
+
+    subgraph Azure ["Microsoft Azure Cloud (Compute & AI)"]
+        B["Azure App Service<br/>(Next.js REST API & SSR)"]
+        C["Azure Blob Storage<br/>(occurrences-photos)"]
+        D["Azure Functions App<br/>(AI Vision, Sharp & Karma)"]
+    end
+
+    subgraph GCP ["Google Cloud Platform (Persistence)"]
+        E[("GCP Cloud Firestore<br/>(NoSQL ACID State)")]
+    end
+
+    A -->|"1. HTTPS Request"| B
+    B -->|"2. Image Upload"| C
+    C -->|"3. Blob Trigger"| D
+    B -->|"4. Persistence & ACID Tx"| E
+    D -->|"5. Update State & AI Metadata"| E
+```
 
 ### 🧩 Core Component Layers
 
