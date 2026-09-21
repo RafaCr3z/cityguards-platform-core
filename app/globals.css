@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/* =======================================================================
+ * CityGuards — Design System (Semantic Tokens)
+ *
+ * Segue a convenção shadcn/ui: todas as cores são definidas como variáveis
+ * CSS semânticas. Para implementar Dark Mode ou temas de Câmaras Municipais,
+ * basta redefinir estas variáveis num seletor diferente.
+ * ======================================================================= */
+
+:root {
+  /* ── Surface / Background ──────────────────────────────────────────── */
+  --background:            #f3f4f6;
+  --foreground:            #111827;
+
+  --card:                  #ffffff;
+  --card-foreground:       #111827;
+
+  --popover:               #ffffff;
+  --popover-foreground:    #111827;
+
+  /* ── Primary (Dark-Blue principal) ─────────────────────────────────── */
+  --primary:               #0c1929;
+  --primary-foreground:    #ffffff;
+  --primary-light:         #142a44;
+  --primary-muted:         #1a3654;
+  --primary-accent:        #1e4976;
+
+  /* ── Secondary (Blue médio) ────────────────────────────────────────── */
+  --secondary:             #2a6cb5;
+  --secondary-foreground:  #ffffff;
+  --secondary-light:       #4a9ae6;
+  --secondary-lighter:     #7eb8f0;
+  --secondary-muted:       #b3d7f7;
+  --secondary-bg:          #e0effc;
+
+  /* ── Muted (Grey neutro) ───────────────────────────────────────────── */
+  --muted:                 #f3f4f6;
+  --muted-foreground:      #4b5563;   /* ≥ 7:1 sobre #fff — WCAG AAA */
+
+  /* ── Accent ────────────────────────────────────────────────────────── */
+  --accent:                #e0effc;
+  --accent-foreground:     #1e4976;
+
+  /* ── Semantic Status ───────────────────────────────────────────────── */
+  --destructive:           #ef4444;
+  --destructive-foreground:#ffffff;
+  --destructive-light:     #fee2e2;
+
+  --success:               #10b981;
+  --success-foreground:    #ffffff;
+  --success-light:         #d1fae5;
+
+  --warning:               #f59e0b;
+  --warning-foreground:    #ffffff;
+  --warning-light:         #fef3c7;
+
+  --info:                  #3b82f6;
+  --info-foreground:       #ffffff;
+  --info-light:            #dbeafe;
+
+  /* ── Border / Input / Ring ─────────────────────────────────────────── */
+  --border:                #e5e7eb;
+  --input:                 #e5e7eb;
+  --ring:                  #2a6cb5;
+
+  /* ── Sidebar ───────────────────────────────────────────────────────── */
+  --sidebar:               #0c1929;
+  --sidebar-foreground:    #ffffff;
+  --sidebar-muted:         #142a44;
+  --sidebar-muted-foreground: #7eb8f0;
+  --sidebar-accent:        rgba(30, 73, 118, 0.30);
+  --sidebar-border:        #142a44;
+  --sidebar-ring:          #4a9ae6;
+  --sidebar-label:         rgba(74, 154, 230, 0.60);
+
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  --sidebar-width:         280px;
+  --header-height:         72px;
+
+  /* ── Radius ────────────────────────────────────────────────────────── */
+  --radius-sm:             0.5rem;
+  --radius:                0.75rem;
+  --radius-lg:             1rem;
+}
+
+/* ── Tailwind v4 theme bindings ──────────────────────────────────────── */
+@theme inline {
+  --font-sans: 'Inter', var(--font-geist-sans, system-ui), sans-serif;
+  --font-mono: var(--font-geist-mono, monospace);
+
+  /* Surface */
+  --color-background:          var(--background);
+  --color-foreground:          var(--foreground);
+  --color-card:                var(--card);
+  --color-card-foreground:     var(--card-foreground);
+  --color-popover:             var(--popover);
+  --color-popover-foreground:  var(--popover-foreground);
+
+  /* Primary */
+  --color-primary:             var(--primary);
+  --color-primary-foreground:  var(--primary-foreground);
+  --color-primary-light:       var(--primary-light);
+  --color-primary-muted:       var(--primary-muted);
+  --color-primary-accent:      var(--primary-accent);
+
+  /* Secondary */
+  --color-secondary:           var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-secondary-light:     var(--secondary-light);
+  --color-secondary-lighter:   var(--secondary-lighter);
+  --color-secondary-muted:     var(--secondary-muted);
+  --color-secondary-bg:        var(--secondary-bg);
+
+  /* Muted */
+  --color-muted:               var(--muted);
+  --color-muted-foreground:    var(--muted-foreground);
+
+  /* Accent */
+  --color-accent:              var(--accent);
+  --color-accent-foreground:   var(--accent-foreground);
+
+  /* Status */
+  --color-destructive:            var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-light:      var(--destructive-light);
+  --color-success:                var(--success);
+  --color-success-foreground:     var(--success-foreground);
+  --color-success-light:          var(--success-light);
+  --color-warning:                var(--warning);
+  --color-warning-foreground:     var(--warning-foreground);
+  --color-warning-light:          var(--warning-light);
+  --color-info:                   var(--info);
+  --color-info-foreground:        var(--info-foreground);
+  --color-info-light:             var(--info-light);
+
+  /* Border / Input / Ring */
+  --color-border:              var(--border);
+  --color-input:               var(--input);
+  --color-ring:                var(--ring);
+
+  /* Sidebar */
+  --color-sidebar:                  var(--sidebar);
+  --color-sidebar-foreground:       var(--sidebar-foreground);
+  --color-sidebar-muted:            var(--sidebar-muted);
+  --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
+  --color-sidebar-accent:           var(--sidebar-accent);
+  --color-sidebar-border:           var(--sidebar-border);
+  --color-sidebar-ring:             var(--sidebar-ring);
+  --color-sidebar-label:            var(--sidebar-label);
+}
+
+/* =======================================================================
+ * Base Styles
+ * ======================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =======================================================================
+ * Scrollbar
+ * ======================================================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 100px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* =======================================================================
+ * Focus-visible (A11y — WCAG 2.1)
+ *
+ * Todos os elementos interactivos usam este padrão via Tailwind:
+ *   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+ *   focus-visible:ring-offset-2
+ * ======================================================================= */
+
+:focus-visible {
+  outline: none;
+}
+
+/* =======================================================================
+ * Animations
+ * ======================================================================= */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.3); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes mapPulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.8; }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.animate-fadeInUp    { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fadeIn      { animation: fadeIn 0.4s ease-out forwards; }
+.animate-slideInLeft { animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-pulse-dot   { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-mapPulse    { animation: mapPulse 3s ease-in-out infinite; }
+.animate-skeleton    { animation: skeletonPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* ── Staggered animation delays ──────────────────────────────────────── */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* =======================================================================
+ * Map Grid
+ * ======================================================================= */
+
+.map-grid {
+  background-image:
+    linear-gradient(rgba(42, 108, 181, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 108, 181, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}

@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "myBlob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "occurrences-photos/{name}",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}

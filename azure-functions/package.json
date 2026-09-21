@@ -1,0 +1,9 @@
+{
+  "name": "cityguards-functions",
+  "version": "1.0.0",
+  "description": "Azure Functions for CityGuards",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {}
+}
