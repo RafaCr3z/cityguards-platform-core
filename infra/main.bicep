@@ -1,13 +1,16 @@
 /* =====================================================================
-   CityGuards — Template Bicep de Infraestrutura (IaC)
+   CityGuards — Template Bicep de Infraestrutura (IaC) - Zero-Trust & Zero-Keys
    
-   Provisionamento completo da infraestrutura Cloud Native no Azure:
+   Provisionamento de Infraestrutura Cloud Native no Azure:
    - Resource Group (implícito se corrido a nível de RG)
-   - Azure App Service Plan & Web App (Next.js Frontend/Backend)
    - Azure Storage Account (Blobs: occurrences-photos & thumbnails)
-   - Azure Cognitive Services (Azure AI Vision para categorização e moderação)
-   - Azure Function App (Consumo Serverless para triggers de blob)
-   - Azure Cosmos DB Account (Opção original NoSQL SQL API)
+   - Azure AI Vision (Serviços Cognitivos)
+   - Azure Cosmos DB Account (NoSQL SQL API)
+   - Azure App Service Plan & Web App (Next.js) com System-Assigned Managed Identity
+   - Azure Function App (Serverless Triggers) com System-Assigned Managed Identity
+   - Azure RBAC Role Assignments (Zero-Keys Security Model):
+       * Storage Blob Data Contributor para WebApp e FunctionApp
+       * Cognitive Services User para WebApp e FunctionApp
    ===================================================================== */
 
 @description('Prefixo para o nome de todos os recursos.')
@@ -40,6 +43,10 @@ var functionAppName = '${prefix}-func-${uniqueSuffix}'
 var cognitiveServiceName = '${prefix}-ai-${uniqueSuffix}'
 var cosmosDbName = '${prefix}-db-${uniqueSuffix}'
 
+// Definições de Papéis RBAC Built-in (Role Definition IDs)
+var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+var cognitiveServicesUserRoleId = 'a97b65f3-24c7-4388-baec-2e87135dc908'
+
 /* ── 1. Conta de Armazenamento (Azure Blob Storage) ───────────────────── */
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
@@ -53,6 +60,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
     accessTier: 'Hot'
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: false
   }
 }
 
@@ -83,6 +91,7 @@ resource cognitiveService 'Microsoft.CognitiveServices/accounts@2022-10-25' = {
   kind: 'ComputerVision'
   properties: {
     customSubDomainName: '${prefix}-vision-${uniqueSuffix}'
+    publicNetworkAccess: 'Enabled'
     apiProperties: {}
   }
 }
@@ -157,22 +166,29 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   name: webAppName
   location: location
   kind: 'app'
+  identity: {
+    type: 'SystemAssigned' // Ativação de Managed Identity no Azure AD
+  }
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
       linuxFxVersion: 'NODE|18-lts'
       appSettings: [
         {
-          name: 'BLOB_STORAGE_CONNECTION_STRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+          name: 'AZURE_STORAGE_ACCOUNT_NAME'
+          value: storageAccount.name
+        }
+        {
+          name: 'AZURE_BLOB_SERVICE_URL'
+          value: storageAccount.properties.primaryEndpoints.blob
         }
         {
           name: 'AI_VISION_ENDPOINT'
           value: cognitiveService.properties.endpoint
         }
         {
-          name: 'AI_VISION_KEY'
-          value: cognitiveService.listKeys().key1
+          name: 'COSMOS_DB_ENDPOINT'
+          value: cosmosDbAccount.properties.documentEndpoint
         }
       ]
     }
@@ -195,13 +211,16 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
   name: functionAppName
   location: location
   kind: 'functionapp'
+  identity: {
+    type: 'SystemAssigned' // Managed Identity para a Function App
+  }
   properties: {
     serverFarmId: functionAppPlan.id
     siteConfig: {
       appSettings: [
         {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+          name: 'AzureWebJobsStorage__accountName'
+          value: storageAccount.name
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -220,18 +239,66 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
           value: cognitiveService.properties.endpoint
         }
         {
-          name: 'AI_VISION_KEY'
-          value: cognitiveService.listKeys().key1
+          name: 'AZURE_BLOB_SERVICE_URL'
+          value: storageAccount.properties.primaryEndpoints.blob
         }
       ]
     }
   }
 }
 
+/* ── 6. Atribuições de Funções RBAC (Role Assignments - Zero-Keys) ────── */
+
+// Conceder permissão de leitura/escrita de Blobs ao WebApp
+resource webAppStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, webApp.id, storageBlobDataContributorRoleId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleId)
+    principalId: webApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Conceder permissão de leitura/escrita de Blobs à FunctionApp
+resource functionAppStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, storageBlobDataContributorRoleId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleId)
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Conceder permissão de uso do Azure AI Vision ao WebApp
+resource webAppCognitiveRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(cognitiveService.id, webApp.id, cognitiveServicesUserRoleId)
+  scope: cognitiveService
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesUserRoleId)
+    principalId: webApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Conceder permissão de uso do Azure AI Vision à FunctionApp
+resource functionAppCognitiveRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(cognitiveService.id, functionApp.id, cognitiveServicesUserRoleId)
+  scope: cognitiveService
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesUserRoleId)
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 /* ── outputs de Ligação ────────────────────────────────────────────────── */
 
 output webAppUrl string = 'https://${webApp.properties.defaultHostName}'
+output webAppPrincipalId string = webApp.identity.principalId
 output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
+output functionAppPrincipalId string = functionApp.identity.principalId
 output storageAccountName string = storageAccount.name
 output visionEndpoint string = cognitiveService.properties.endpoint
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
