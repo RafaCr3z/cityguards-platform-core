@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Azure_Functions-0062AD?style=for-the-badge&logo=azure-functions&logoColor=white" alt="Azure Functions" />
   <img src="https://img.shields.io/badge/GitHub_Actions_OIDC-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="GitHub Actions OIDC" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  <img src="https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Next.js_16.2.3-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 16.2.3" />
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT" />
 </p>
 
@@ -46,7 +46,7 @@ graph LR
 ### 🧩 Core Component Layers
 
 1. **Compute & Ingress (Microsoft Azure):**
-   - **Azure App Service (Linux B1 SKU):** Hosts the containerized Next.js 14 web application core, handling server-side rendering (SSR), API routes, and municipal management portals.
+   - **Azure App Service (Linux B1 SKU):** Hosts the containerized Next.js 16.2.3 (React 19) web application core, handling server-side rendering (SSR), API routes, and municipal management portals.
    - **Azure Blob Storage (`occurrences-photos` & `thumbnails`):** High-throughput storage tier with TLS 1.2 enforcement for evidence images.
 2. **Serverless Event Processing (Azure Functions App):**
    - **`AnalyzeImageAI`:** Triggered upon blob creation; connects to **Azure AI Vision (Cognitive Services)** to extract visual tags, categorize incidents, and perform automated content moderation.
@@ -131,8 +131,10 @@ sequenceDiagram
 ### CI/CD Pipeline Stages:
 1. **Quality & Linting:** Automated ESLint and TypeScript compile checks.
 2. **IaC Validation:** `az bicep build` syntax verification and ARM template linting.
-3. **Container Security Scan:** Vulnerability scanning with **Aqua Security Trivy** blocking critical CVEs.
-4. **Federated Cloud Deployment:** Zero-secret infrastructure provisioning via `azure/arm-deploy@v2`.
+3. **Container Security Scan:** Vulnerability scanning with **Aqua Security Trivy** (configured with `exit-code: '0'` in non-blocking informational mode for vulnerability visibility).
+4. **Federated Cloud Deployment & Dry-Run Mode:**
+   - **Dry-Run Mode (Default):** When Azure OIDC secrets are not set in the repository, the workflow executes a safe Bicep compilation dry-run (`az bicep build --outfile main.compiled.json`) to validate template integrity without cloud provisioning.
+   - **Active Deployment:** When federated OIDC secrets (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`) are configured, the workflow provisions Azure resources via `azure/arm-deploy@v2`. A green CI check confirms successful code, container, and template compilation, but does not indicate that live Azure resources were provisioned unless OIDC secrets were supplied.
 
 ---
 
@@ -178,7 +180,7 @@ cityguards-platform-core/
 │   ├── Dockerfile                 # Microservice container definition
 │   └── server.js                  # PDF rendering engine
 │
-├── app/                           # Next.js 14 Core Application & API Routes
+├── app/                           # Next.js 16.2 Core Application & API Routes
 ├── lib/                           # Shared utilities, Firestore client & Azure SDKs
 ├── public/                        # Static assets & branding
 │
@@ -186,10 +188,10 @@ cityguards-platform-core/
 │   └── architecture.svg           # High-resolution multi-cloud topology diagram
 │
 ├── .dockerignore                  # Docker exclusion rules
-├── .env.example                   # Environment configuration template
+├── .env.example                   # Environment configuration template (root)
 ├── .gitignore                     # Git exclusion rules
 ├── Dockerfile                     # Main application container image
-├── package.json                   # Node.js dependencies
+├── package.json                   # Node.js dependencies (Next.js 16.2.3, React 19)
 └── README.md                      # Platform documentation
 ```
 
@@ -209,6 +211,7 @@ git clone https://github.com/RafaCr3z/cityguards-platform-core.git
 cd cityguards-platform-core
 cp .env.example .env.local
 ```
+> *.env.example is provided in the repository root without secrets, detailing Firebase credentials, Azure Blob Connection String, and Cognitive Services endpoints.*
 
 ### 2. Install Dependencies
 ```bash
@@ -221,7 +224,7 @@ npm run dev
 ```
 *Application available at:* `http://localhost:3000`
 
-### 4. Deploy Infrastructure with Azure Bicep
+### 4. Deploy Infrastructure with Azure Bicep (Manual Option)
 ```bash
 az login
 az group create --name rg-cityguards-dev --location westeurope
@@ -233,13 +236,22 @@ az deployment group create \
 
 ---
 
-## 👥 Authors & Acknowledgments
+## 👥 Authors, Team Credits & Academic Evolution
 
-* **Diogo Oliveira**
-* **Rafael Cruz** — [LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)
-* **Tiago Alves**
-* **Academic Context:** Cloud Computing (*Computação em Nuvem*) — 3rd Year, B.Sc. in Computer Engineering (Escola Superior de Tecnologia de Castelo Branco — IPCB)
-* **Advisor / Professor:** Prof. Dr. Osvaldo Santos
+### Academic Context & Team Members
+* **Curricular Unit:** Cloud Computing (*Computação em Nuvem*) — 3rd Year, B.Sc. in Computer Engineering (Escola Superior de Tecnologia de Castelo Branco — IPCB).
+* **Advisor / Professor:** Prof. Dr. Osvaldo Santos.
+* **Project Team:**
+  - **Diogo Oliveira**
+  - **Rafael Cruz** — [LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)
+  - **Tiago Alves**
+
+### Architecture Evolution & Individual Scope
+* **Academic Prototype vs. Published Repository:** The original academic coursework evaluated a decoupled Node.js/Express backend service coupled with a React/Vite client. This repository consolidates the application into a unified **Next.js (App Router, v16.2.3)** full-stack architecture, while preserving the complete multi-cloud infrastructure (Azure App Service, Azure Functions, Azure Blob Storage, GCP Firestore, Bicep IaC, and Dockerized PDF microservice).
+* **Rafael Cruz's Individual Contributions:**
+  - **Backend & Data Persistence:** Persistence layer design, GCP Firestore schema integration, and atomic transaction handling with ACID guarantees (`db.runTransaction`).
+  - **Containerization:** Multi-stage Docker packaging for the web application and the dedicated `pdf-service` microservice.
+  - **Infrastructure as Code (IaC):** Modular Azure Bicep templates ([`infra/main.bicep`](infra/main.bicep)) for declarative cloud provisioning.
 
 ---
 <p align="center">
