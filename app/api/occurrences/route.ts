@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     // Obter as ocorrências
     const snapshot = await query.get();
     
-    let items = snapshot.docs.map((doc: any) => ({
+    const items = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     }));

@@ -1,7 +1,5 @@
 import * as admin from 'firebase-admin';
 
-let db: admin.firestore.Firestore;
-
 // Evitar inicializar múltiplas vezes o Firebase Admin em desenvolvimento e evitar erros no build
 if (!admin.apps.length) {
   try {
@@ -24,6 +22,6 @@ if (!admin.apps.length) {
 }
 
 // Se não há apps ativas, não inicializamos o firestore para evitar crash de build estático
-db = admin.apps.length ? admin.firestore() : (null as any);
+const db: admin.firestore.Firestore = admin.apps.length ? admin.firestore() : (null as any);
 
 export { admin, db };

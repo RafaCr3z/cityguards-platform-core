@@ -12,8 +12,7 @@ import {
   Gift, 
   CheckCircle, 
   AlertTriangle,
-  RefreshCw,
-  Search
+  RefreshCw
 } from "lucide-react";
 
 interface UserProfile {

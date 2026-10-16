@@ -6,14 +6,12 @@ import {
   UserPlus,
   MapPin,
   CheckCircle2,
-  Clock,
   Pause,
   XCircle,
   Search,
   MoreHorizontal,
   Phone,
   ChevronRight,
-  AlertTriangle,
 } from "lucide-react";
 import { fieldTeams } from "@/app/data/teamsData";
 import { Skeleton } from "@/app/components/ui/Skeleton";

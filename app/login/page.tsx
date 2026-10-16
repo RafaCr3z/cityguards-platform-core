@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Shield, ArrowRight, Lock, User, AlertCircle, MapPin } from "lucide-react";
 
 type AuthMode = "login" | "register";
@@ -258,9 +259,9 @@ export default function AuthPage() {
           </div>
 
           <div className="mt-8 pt-6 border-t border-border flex justify-between items-center text-xs font-medium text-muted-foreground">
-            <a href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
+            <Link href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
               &larr; Voltar ao Portal Público
-            </a>
+            </Link>
             <span>Suporte Nível 1</span>
           </div>
         </div>

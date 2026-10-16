@@ -9,11 +9,9 @@ import {
   AlertTriangle,
   Clock,
   MapPin,
-  ChevronRight,
   AlertCircle,
   RefreshCw,
   ArrowUpDown,
-  Eye,
   CheckCircle2,
   Play,
   Loader2,
@@ -295,7 +293,7 @@ export default function OccurrencesPage() {
         a.click();
         a.remove();
         alert("Aviso: O microsserviço de PDF (Docker na porta 5001) não se encontra ativo. Descarregamos em formato CSV de contingência.");
-      } catch (csvErr) {
+      } catch {
         alert("Não foi possível exportar os dados.");
       }
     } finally {

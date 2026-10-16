@@ -10,12 +10,11 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  FileText,
   Search,
 } from "lucide-react";
 import { integrationStats, financialRecords } from "@/app/data/sncapData";
 import { Skeleton } from "@/app/components/ui/Skeleton";
-import type { FinancialRecord, SyncStatus } from "@/app/types/pages";
+import type { SyncStatus } from "@/app/types/pages";
 
 /* -- Status config ---------------------------------------------------- */
 

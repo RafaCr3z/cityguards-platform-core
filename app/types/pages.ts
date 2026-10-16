@@ -2,8 +2,6 @@
  * CityGuards - Tipos adicionais para paginas secundarias
  * ======================================================================= */
 
-import type { OccurrenceStatus } from "./index";
-
 /* -- Equipas no Terreno ------------------------------------------------ */
 
 export type TeamStatus = "ativa" | "em pausa" | "inativa";
