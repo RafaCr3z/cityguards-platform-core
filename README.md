@@ -235,7 +235,9 @@ az deployment group create \
 
 ## 👥 Authors & Acknowledgments
 
+* **Diogo Oliveira**
 * **Rafael Cruz** — [LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)
+* **Tiago Alves**
 * **Program:** Poliempreende Regional & Nacional (Instituto Politécnico de Castelo Branco - IPCB)
 
 ---
