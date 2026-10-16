@@ -238,7 +238,8 @@ az deployment group create \
 * **Diogo Oliveira**
 * **Rafael Cruz** — [LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)
 * **Tiago Alves**
-* **Program:** Poliempreende Regional & Nacional (Instituto Politécnico de Castelo Branco - IPCB)
+* **Academic Context:** Cloud Computing (*Computação em Nuvem*) — 3rd Year, B.Sc. in Computer Engineering (Escola Superior de Tecnologia de Castelo Branco — IPCB)
+* **Advisor / Professor:** Prof. Dr. Osvaldo Santos
 
 ---
 <p align="center">
