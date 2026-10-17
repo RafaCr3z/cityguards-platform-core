@@ -238,20 +238,17 @@ az deployment group create \
 
 ## 👥 Authors, Team Credits & Academic Evolution
 
-### Academic Context & Team Members
-* **Curricular Unit:** Cloud Computing (*Computação em Nuvem*) — 3rd Year, B.Sc. in Computer Engineering (Escola Superior de Tecnologia de Castelo Branco — IPCB).
+### Academic Context & Team Responsibilities
+* **Curricular Unit:** Cloud Computing (*Computação em Nuvem*) — 3rd Year, B.Sc. in Computer Engineering (Escola Superior de Tecnologia de Castelo Branco — IPCB, Grade: **20 / 20**).
 * **Advisor / Professor:** Prof. Dr. Osvaldo Santos.
-* **Project Team:**
-  - **Diogo Oliveira**
-  - **Rafael Cruz** — [LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)
-  - **Tiago Alves**
+* **Academic Project Team & Original Division of Work:**
+  - **Rafael Cruz** ([LinkedIn](https://linkedin.com/in/rafael-cruz-7159092b2) | [GitHub](https://github.com/RafaCr3z)) — **Backend, Data Persistence & Containerization:** Designed the persistence layer, GCP Cloud Firestore integration, atomic transaction logic with ACID guarantees (`db.runTransaction`), and multi-stage Docker containerization for the core application and standalone `pdf-service` microservice.
+  - **Tiago Alves** — **Cloud Infrastructure & IaC (Academic Delivery):** Authored the original **Azure Bicep** Infrastructure as Code templates and Azure resource provisioning strategy in the academic submission.
+  - **Diogo Oliveira** — **Frontend & Serverless Integration:** Developed the client interface and serverless workflow integrations.
 
-### Architecture Evolution & Individual Scope
-* **Academic Prototype vs. Published Repository:** The original academic coursework evaluated a decoupled Node.js/Express backend service coupled with a React/Vite client. This repository consolidates the application into a unified **Next.js (App Router, v16.2.3)** full-stack architecture, while preserving the complete multi-cloud infrastructure (Azure App Service, Azure Functions, Azure Blob Storage, GCP Firestore, Bicep IaC, and Dockerized PDF microservice).
-* **Rafael Cruz's Individual Contributions:**
-  - **Backend & Data Persistence:** Persistence layer design, GCP Firestore schema integration, and atomic transaction handling with ACID guarantees (`db.runTransaction`).
-  - **Containerization:** Multi-stage Docker packaging for the web application and the dedicated `pdf-service` microservice.
-  - **Infrastructure as Code (IaC):** Modular Azure Bicep templates ([`infra/main.bicep`](infra/main.bicep)) for declarative cloud provisioning.
+### Post-Academic Evolution (Implemented by Rafael Cruz in this Repository)
+* **Full-Stack Consolidation:** Migrated the original academic split prototype (Node.js/Express + React/Vite) into a unified **Next.js 16.2.3 (App Router)** architecture while maintaining the multi-cloud topology.
+* **DevSecOps CI/CD & IaC Automation ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) & [`infra/main.bicep`](infra/main.bicep)):** Adapted the Bicep template for automated CI validation (`az bicep build` dry-run mode) and engineered the **Zero-Secret GitHub Actions CI/CD pipeline** with **Azure OIDC federated authentication** and **Aqua Trivy** container scanning as a post-coursework evolution.
 
 ---
 <p align="center">
