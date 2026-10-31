@@ -20,6 +20,9 @@ import { useAllOccurrences } from "@/app/hooks/useAllOccurrences";
 import { Skeleton } from "@/app/components/ui/Skeleton";
 import type { Occurrence, OccurrenceStatus, UrgencyLevel } from "@/app/types";
 
+/** URL do microsserviço de PDF (configurável por ambiente; por defeito o contentor local). */
+const PDF_SERVICE_URL = (process.env.NEXT_PUBLIC_PDF_SERVICE_URL || "http://localhost:5001").replace(/\/+$/, "");
+
 /* ── Lookup tables ─────────────────────────────────────────────────── */
 
 const statusBadge: Record<OccurrenceStatus, string> = {
@@ -248,7 +251,7 @@ export default function OccurrencesPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:5001/generate-report", {
+      const response = await fetch(`${PDF_SERVICE_URL}/generate-report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -272,26 +275,30 @@ export default function OccurrencesPage() {
       console.warn("Serviço Docker de PDF inacessível. Usando exportação CSV de contingência...", err);
       try {
         const headers = ["ID", "Titulo", "Localizacao", "Categoria", "Urgencia", "Estado", "Data"];
+        const csvCell = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
         const rows = filtered.map(occ => [
           occ.id,
-          `"${occ.title.replace(/"/g, '""')}"`,
-          `"${occ.location.replace(/"/g, '""')}"`,
+          occ.title,
+          occ.location,
           occ.category,
           occ.urgency,
           occ.status,
           occ.reportedAt
-        ]);
+        ].map(csvCell));
 
-        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
-          + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-        
-        const encodedUri = encodeURI(csvContent);
+        // Blob em vez de data URI: encodeURI n\u00E3o codifica "#", o que cortava o CSV nesse caractere
+        const csvBlob = new Blob(
+          ["\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n")],
+          { type: "text/csv;charset=utf-8" }
+        );
+        const csvUrl = window.URL.createObjectURL(csvBlob);
         const a = document.createElement("a");
-        a.href = encodedUri;
+        a.href = csvUrl;
         a.download = `relatorio-ocorrencias-${municipio.toLowerCase()}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
+        window.URL.revokeObjectURL(csvUrl);
         alert("Aviso: O microsserviço de PDF (Docker na porta 5001) não se encontra ativo. Descarregamos em formato CSV de contingência.");
       } catch {
         alert("Não foi possível exportar os dados.");

@@ -17,19 +17,29 @@ app.get("/health", (req, res) => {
 app.post("/generate-report", (req, res) => {
   const { municipio, ocorrencias } = req.body;
 
-  if (!municipio || !ocorrencias) {
+  if (typeof municipio !== "string" || !municipio.trim() || !Array.isArray(ocorrencias)) {
     return res.status(400).json({ error: "Faltam dados necessários (municipio, ocorrencias)" });
   }
 
   try {
-    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    // bufferPages: necessário para voltar às páginas anteriores e escrever o rodapé (switchToPage)
+    const doc = new PDFDocument({ size: "A4", margin: 50, bufferPages: true });
 
-    // Configurar cabeçalhos HTTP para descarregar o PDF
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=relatorio-${municipio.toLowerCase()}.pdf`);
-
-    // Ligar o stream do PDFKit diretamente à resposta Express
-    doc.pipe(res);
+    // Gerar o PDF todo em memória antes de responder: se algo falhar a meio,
+    // ainda é possível devolver um 500 limpo em vez de um ficheiro truncado
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      // Nomes com acentos/espaços (ex: "Évora", "Castelo Branco") são inválidos num header HTTP sem codificação
+      const nomeFicheiro = `relatorio-${municipio.toLowerCase()}.pdf`;
+      const nomeAscii = nomeFicheiro.normalize("NFD").replace(/[^\x20-\x7E]/g, "").replace(/["\\]/g, "");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${nomeAscii}"; filename*=UTF-8''${encodeURIComponent(nomeFicheiro)}`
+      );
+      res.send(Buffer.concat(chunks));
+    });
 
     // ── Cabeçalho (Header) ──
     doc.rect(0, 0, 595.28, 120) // Retângulo superior colorido (azul escuro premium)
@@ -145,10 +155,15 @@ app.post("/generate-report", (req, res) => {
     const pageCount = doc.bufferedPageRange().count;
     for (let i = 0; i < pageCount; i++) {
       doc.switchToPage(i);
+      // O rodapé fica abaixo da margem inferior (y=800 > 841.89-50); sem retirar a margem,
+      // o PDFKit criaria uma página nova em branco por cada rodapé
+      const margemInferior = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
       doc.rect(50, 790, 495, 1).fill("#e2e8f0");
       doc.fontSize(8)
          .fillColor("#64748b")
          .text(`CityGuards Software de Gestão Cívica Independente - Página ${i + 1} de ${pageCount}`, 50, 800, { align: "center", width: 495 });
+      doc.page.margins.bottom = margemInferior;
     }
 
     doc.end();
