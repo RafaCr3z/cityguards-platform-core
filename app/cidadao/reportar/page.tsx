@@ -56,6 +56,9 @@ export default function ReportOccurrence() {
       return;
     }
 
+    // O localStorage só existe no browser: a página é pré-renderizada no servidor, por isso o
+    // utilizador só pode ser lido depois de montar (ler no useState causaria erro de hidratação)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(userData);
     setMunicipio(userData.municipio); // Município padrão do utilizador
   }, []);
@@ -120,7 +123,7 @@ export default function ReportOccurrence() {
     if (!user) return;
 
     if (!titulo || !descricao || !municipio || !latitude || !longitude) {
-      setErrorMsg("Por favor, preencha todos os campos obrigatórios (marcardos com *).");
+      setErrorMsg("Por favor, preencha todos os campos obrigatórios (marcados com *).");
       return;
     }
 
@@ -129,9 +132,9 @@ export default function ReportOccurrence() {
     setSuccessMsg("");
 
     try {
-      // 1. Upload de Imagem se houver
+      // 1. Upload de Imagem se houver (e se ainda não foi carregada numa tentativa anterior)
       let uploadedUrl = fotografiaUrl;
-      if (imageFile) {
+      if (imageFile && !fotografiaUrl) {
         uploadedUrl = await uploadPhoto();
         setFotografiaUrl(uploadedUrl);
       }
@@ -323,8 +326,10 @@ export default function ReportOccurrence() {
                     <button
                       type="button"
                       onClick={() => {
+                        if (imagePreview) URL.revokeObjectURL(imagePreview);
                         setImageFile(null);
                         setImagePreview(null);
+                        setFotografiaUrl("");
                       }}
                       className="absolute inset-0 bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
                     >
@@ -346,7 +351,7 @@ export default function ReportOccurrence() {
 
                 <div className="text-xs text-muted-foreground text-center sm:text-left">
                   <p className="font-semibold">Fotografe o local do incidente.</p>
-                  <p className="mt-1">Uma prova fotográfica nítida permite acelerar a intervenção e concede um **bónus de 20 pontos** de cidadania.</p>
+                  <p className="mt-1">Uma prova fotográfica nítida permite acelerar a intervenção e concede um <strong>bónus de 20 pontos</strong> de cidadania.</p>
                 </div>
               </div>
             </div>
@@ -400,7 +405,7 @@ export default function ReportOccurrence() {
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">
-                A precisão GPS permite à equipa de manutenção localizar o problema. A introdução de coordenadas concede um **bónus de 20 pontos** de cidadania.
+                A precisão GPS permite à equipa de manutenção localizar o problema. A introdução de coordenadas concede um <strong>bónus de 20 pontos</strong> de cidadania.
               </p>
             </div>
 

@@ -28,7 +28,8 @@ module.exports = async function (context, myBlob) {
   // Extrair o ID da ocorrência (ex: "OC-4821.jpg" -> "OC-4821")
   const occurrenceId = blobName.split(".")[0];
 
-  const visionEndpoint = process.env.AI_VISION_ENDPOINT;
+  // O endpoint vem normalmente com "/" final (portal Azure / output do Bicep); removê-lo evita "//vision"
+  const visionEndpoint = (process.env.AI_VISION_ENDPOINT || "").replace(/\/+$/, "");
   const visionKey = process.env.AI_VISION_KEY;
 
   if (!visionEndpoint || !visionKey) {
@@ -76,11 +77,27 @@ module.exports = async function (context, myBlob) {
 
     // 4. Gravar os resultados no Firestore
     if (db) {
-      const docRef = db.collection("Ocorrencias").doc(occurrenceId);
-      const doc = await docRef.get();
+      // O upload da web app grava o blob como "<uuid>.<ext>" e o Firestore gera um ID diferente,
+      // por isso a ocorrência é procurada pelo URL da fotografia que ela guarda (fotografiaUrl).
+      // O nome do blob como ID fica como alternativa para blobs nomeados pela ocorrência.
+      let doc = null;
+      const blobUri = context.bindingData.uri;
+      if (blobUri) {
+        const snapshot = await db
+          .collection("Ocorrencias")
+          .where("fotografiaUrl", "==", blobUri)
+          .limit(1)
+          .get();
+        if (!snapshot.empty) doc = snapshot.docs[0];
+      }
+      if (!doc) {
+        const byId = await db.collection("Ocorrencias").doc(occurrenceId).get();
+        if (byId.exists) doc = byId;
+      }
+      const docRef = doc ? doc.ref : null;
 
-      if (doc.exists) {
-        context.log(`A atualizar a ocorrência ${occurrenceId} no Firestore...`);
+      if (doc) {
+        context.log(`A atualizar a ocorrência ${doc.id} no Firestore...`);
         
         await docRef.update({
           categoriaIA: categoriaSugerida,
@@ -91,9 +108,9 @@ module.exports = async function (context, myBlob) {
           categoria: doc.data().categoria === "Outros" || !doc.data().categoria ? categoriaSugerida : doc.data().categoria
         });
 
-        context.log(`Ocorrência ${occurrenceId} atualizada com sucesso no Firestore.`);
+        context.log(`Ocorrência ${doc.id} atualizada com sucesso no Firestore.`);
       } else {
-        context.log.warn(`Ocorrência ${occurrenceId} correspondente ao blob não foi encontrada no Firestore.`);
+        context.log.warn(`Nenhuma ocorrência no Firestore corresponde ao blob ${blobName}.`);
       }
     } else {
       context.log.warn("Firestore Database não instanciado. Não foi possível persistir a análise.");

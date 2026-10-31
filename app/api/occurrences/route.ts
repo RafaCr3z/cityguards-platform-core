@@ -48,8 +48,19 @@ export async function POST(request: Request) {
     const { cidadaoId, descricao, municipio, localizacao, fotografiaUrl } = data;
     
     // Validação mínima dos campos requeridos
-    if (!descricao || !municipio || !localizacao || !localizacao.latitude || !localizacao.longitude) {
+    // (Number.isFinite aceita a coordenada 0, que o teste "!latitude" rejeitava, e recusa NaN/texto)
+    const latitude = Number(localizacao?.latitude);
+    const longitude = Number(localizacao?.longitude);
+    if (
+      !descricao || !municipio || !localizacao ||
+      localizacao.latitude === "" || localizacao.longitude === "" ||
+      !Number.isFinite(latitude) || !Number.isFinite(longitude)
+    ) {
       return NextResponse.json({ error: "Faltam campos obrigatórios (descricao, municipio, localizacao)" }, { status: 400 });
+    }
+
+    if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      return NextResponse.json({ error: "Coordenadas inválidas (latitude ±90, longitude ±180)" }, { status: 400 });
     }
 
     // Simulação da Inteligência Operacional (Azure AI Vision local / Regra de Negócio)
@@ -75,10 +86,7 @@ export async function POST(request: Request) {
       municipio,
       categoria: data.categoria || categoriaSugerida,
       estado: "Pendente",
-      localizacao: {
-        latitude: Number(localizacao.latitude),
-        longitude: Number(localizacao.longitude)
-      },
+      localizacao: { latitude, longitude },
       fotografiaUrl: fotografiaUrl || "",
       dataReporte: new Date().toISOString(),
       sugeridoPorIA: !data.categoria, // Flag indicando se a categoria foi definida pela IA simulada

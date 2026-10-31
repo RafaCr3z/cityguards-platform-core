@@ -34,71 +34,88 @@ export function useAllOccurrences(): UseAllOccurrencesReturn {
     search: "",
   });
 
-  const fetchData = useCallback(async () => {
-    setState({ data: null, isLoading: true, error: null });
-
-    try {
-      // 1. Obter o município do utilizador autárquico a partir do localStorage
-      let municipio = "";
-      const storedUser = localStorage.getItem("cityguards_user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.tipoUtilizador === "Autarquia") {
-          municipio = user.municipio;
-        }
+  // Obtém e calcula os dados sem tocar no estado (lança erro em caso de falha)
+  const fetchData = useCallback(async (): Promise<Occurrence[]> => {
+    // 1. Obter o município do utilizador autárquico a partir do localStorage
+    let municipio = "";
+    const storedUser = localStorage.getItem("cityguards_user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.tipoUtilizador === "Autarquia") {
+        municipio = user.municipio;
       }
-
-      // Se não houver município logado, usamos um padrão para testes
-      if (!municipio) {
-        municipio = "Castelo Branco";
-      }
-
-      // 2. Fazer pedido real ao backend
-      const response = await fetch(`/api/occurrences?municipio=${encodeURIComponent(municipio)}`);
-      if (!response.ok) {
-        throw new Error("Não foi possível estabelecer ligação com a API do Firestore.");
-      }
-
-      const rawData = await response.json();
-
-      // 3. Mapear dados do Firestore para o tipo Occurrence esperado pelo frontend
-      const mappedOccurrences: Occurrence[] = rawData.map((occ: any) => ({
-        id: occ.id,
-        title: occ.titulo || `Ocorrência #${occ.id.substring(0, 5)}`,
-        location: occ.localizacao 
-          ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
-          : "Coordenadas não disponíveis",
-        status: (occ.estado === "Em Resolução" || occ.estado === "Resolvida" || occ.estado === "Pendente") 
-          ? occ.estado 
-          : "Pendente",
-        urgency: getUrgency(occ.categoria || ""),
-        reportedAt: occ.dataReporte 
-          ? new Date(occ.dataReporte).toLocaleDateString("pt-PT") + " " + new Date(occ.dataReporte).toLocaleTimeString("pt-PT", {hour: '2-digit', minute:'2-digit'})
-          : "Data desconhecida",
-        category: occ.categoria || "Outros",
-        // Campo extra para visualização rápida no dashboard se necessário
-        fotografiaUrl: occ.fotografiaUrl || "",
-        descricao: occ.descricao || ""
-      }));
-
-      setState({
-        data: mappedOccurrences,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err: any) {
-      console.error("Erro ao carregar dados do Firestore:", err);
-      setState({
-        data: null,
-        isLoading: false,
-        error: err instanceof Error ? err : new Error(err.message || "Erro desconhecido"),
-      });
     }
+
+    // Se não houver município logado, usamos um padrão para testes
+    if (!municipio) {
+      municipio = "Castelo Branco";
+    }
+
+    // 2. Fazer pedido real ao backend
+    const response = await fetch(`/api/occurrences?municipio=${encodeURIComponent(municipio)}`);
+    if (!response.ok) {
+      throw new Error("Não foi possível estabelecer ligação com a API do Firestore.");
+    }
+
+    const rawData = await response.json();
+
+    // 3. Mapear dados do Firestore para o tipo Occurrence esperado pelo frontend
+    const mappedOccurrences: Occurrence[] = rawData.map((occ: any) => ({
+      id: occ.id,
+      title: occ.titulo || `Ocorrência #${occ.id.substring(0, 5)}`,
+      location: Number.isFinite(occ.localizacao?.latitude) && Number.isFinite(occ.localizacao?.longitude)
+        ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
+        : "Coordenadas não disponíveis",
+      status: (occ.estado === "Em Resolução" || occ.estado === "Resolvida" || occ.estado === "Pendente") 
+        ? occ.estado 
+        : "Pendente",
+      urgency: getUrgency(occ.categoria || ""),
+      reportedAt: occ.dataReporte 
+        ? new Date(occ.dataReporte).toLocaleDateString("pt-PT") + " " + new Date(occ.dataReporte).toLocaleTimeString("pt-PT", {hour: '2-digit', minute:'2-digit'})
+        : "Data desconhecida",
+      category: occ.categoria || "Outros",
+      // Campo extra para visualização rápida no dashboard se necessário
+      fotografiaUrl: occ.fotografiaUrl || "",
+      descricao: occ.descricao || ""
+    }));
+
+    return mappedOccurrences;
   }, []);
 
+  // Aplica o resultado ao estado só nos callbacks da promessa (nunca de forma síncrona
+  // no efeito) e ignora respostas que chegam depois de o componente desmontar
+  const load = useCallback(
+    (isCancelled: () => boolean) =>
+      fetchData()
+        .then((data) => {
+          if (!isCancelled()) setState({ data, isLoading: false, error: null });
+        })
+        .catch((err: any) => {
+          console.error("Erro ao carregar dados do Firestore:", err);
+          if (!isCancelled()) {
+            setState({
+              data: null,
+              isLoading: false,
+              error: err instanceof Error ? err : new Error(err?.message || "Erro desconhecido"),
+            });
+          }
+        }),
+    [fetchData]
+  );
+
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
+
+  // Recarregar a pedido: repõe o estado de carregamento e volta a pedir os dados
+  const refetch = useCallback(() => {
+    setState({ data: null, isLoading: true, error: null });
+    load(() => false);
+  }, [load]);
 
   const setFilters = useCallback(
     (partial: Partial<OccurrenceFilters>) => {
@@ -145,6 +162,6 @@ export function useAllOccurrences(): UseAllOccurrencesReturn {
     filters,
     setFilters,
     counts,
-    refetch: fetchData,
+    refetch,
   };
 }

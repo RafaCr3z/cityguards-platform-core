@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { 
   Shield, 
@@ -39,6 +39,13 @@ interface Occurrence {
   dataReporte: string;
 }
 
+/** GET que devolve o JSON da resposta ou lança `errorMessage` se o pedido falhar. */
+async function fetchJson<T>(url: string, errorMessage: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(errorMessage);
+  return response.json();
+}
+
 // Recompensas pré-definidas para a montra local
 const LOCAL_REWARDS = [
   { id: "r1", title: "Entrada Grátis - Piscinas Municipais", cost: 100, category: "Desporto", desc: "Acesso de 1 dia às piscinas olímpicas municipais." },
@@ -56,6 +63,36 @@ export default function CitizenDashboard() {
   const [successMsg, setSuccessMsg] = useState("");
   const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
 
+  // Carregar perfil e ocorrências. O estado só é atualizado nos callbacks da promessa
+  // (nunca de forma síncrona no efeito) e é ignorado se a página já tiver sido desmontada
+  const loadProfileAndOccurrences = useCallback(
+    (userId: string, isCancelled: () => boolean = () => false) =>
+      // 1. Fetch Perfil Atualizado (Pontos)
+      fetchJson<UserProfile>(`/api/users/${userId}`, "Não foi possível carregar as informações do perfil.")
+        .then((freshUser) => {
+          if (isCancelled()) return;
+          setUser(freshUser);
+
+          // Guardar perfil atualizado no localStorage
+          localStorage.setItem("cityguards_user", JSON.stringify(freshUser));
+
+          // 2. Fetch Ocorrências do Cidadão
+          return fetchJson<Occurrence[]>(
+            `/api/occurrences?cidadaoId=${encodeURIComponent(userId)}`,
+            "Não foi possível obter o histórico de ocorrências."
+          ).then((occData) => {
+            if (!isCancelled()) setOccurrences(occData);
+          });
+        })
+        .catch((err: any) => {
+          if (!isCancelled()) setErrorMsg(err.message || "Erro de ligação ao servidor.");
+        })
+        .finally(() => {
+          if (!isCancelled()) setIsLoading(false);
+        }),
+    []
+  );
+
   // Carregar dados iniciais
   useEffect(() => {
     const storedUser = localStorage.getItem("cityguards_user");
@@ -70,32 +107,17 @@ export default function CitizenDashboard() {
       return;
     }
 
-    fetchProfileAndOccurrences(userData.id);
-  }, []);
+    let cancelled = false;
+    loadProfileAndOccurrences(userData.id, () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadProfileAndOccurrences]);
 
-  const fetchProfileAndOccurrences = async (userId: string) => {
+  const refreshProfileAndOccurrences = (userId: string) => {
     setIsLoading(true);
     setErrorMsg("");
-    try {
-      // 1. Fetch Perfil Atualizado (Pontos)
-      const userRes = await fetch(`/api/users/${userId}`);
-      if (!userRes.ok) throw new Error("Não foi possível carregar as informações do perfil.");
-      const freshUser = await userRes.json();
-      setUser(freshUser);
-
-      // Guardar perfil atualizado no localStorage
-      localStorage.setItem("cityguards_user", JSON.stringify(freshUser));
-
-      // 2. Fetch Ocorrências do Cidadão
-      const occRes = await fetch(`/api/occurrences?cidadaoId=${userId}`);
-      if (!occRes.ok) throw new Error("Não foi possível obter o histórico de ocorrências.");
-      const occData = await occRes.json();
-      setOccurrences(occData);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Erro de ligação ao servidor.");
-    } finally {
-      setIsLoading(false);
-    }
+    loadProfileAndOccurrences(userId);
   };
 
   const handleLogout = () => {
@@ -284,7 +306,7 @@ export default function CitizenDashboard() {
                 <p className="text-xs text-muted-foreground">Acompanhe em tempo real o estado de resolução dos seus alertas.</p>
               </div>
               <button 
-                onClick={() => user && fetchProfileAndOccurrences(user.id)}
+                onClick={() => user && refreshProfileAndOccurrences(user.id)}
                 className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground hover:text-foreground"
                 title="Atualizar lista"
               >
@@ -318,7 +340,9 @@ export default function CitizenDashboard() {
                         <div className="mt-1 flex items-center gap-3 text-[10px] text-muted-foreground">
                           <span className="flex items-center gap-0.5">
                             <MapPin size={10} />
-                            Lat: {occ.localizacao.latitude.toFixed(4)} | Lon: {occ.localizacao.longitude.toFixed(4)}
+                            {Number.isFinite(occ.localizacao?.latitude) && Number.isFinite(occ.localizacao?.longitude)
+                              ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
+                              : "Coordenadas não disponíveis"}
                           </span>
                           <span className="flex items-center gap-0.5">
                             <Clock size={10} />
