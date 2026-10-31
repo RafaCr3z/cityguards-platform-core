@@ -1,4 +1,5 @@
 import { BlobServiceClient } from "@azure/storage-blob";
+import { DefaultAzureCredential } from "@azure/identity";
 
 /**
  * Azure Blob Storage Client Factory
@@ -13,15 +14,10 @@ function initBlobClient(): BlobServiceClient | null {
   if (connectionString) {
     return BlobServiceClient.fromConnectionString(connectionString);
   }
-  
+
   if (blobServiceUrl) {
-    try {
-      // Dynamic import or fallback for managed identity / anonymous client
-      const { DefaultAzureCredential } = require("@azure/identity");
-      return new BlobServiceClient(blobServiceUrl, new DefaultAzureCredential());
-    } catch {
-      return new BlobServiceClient(blobServiceUrl);
-    }
+    // Managed Identity em produção (App Service) ou `az login` em desenvolvimento
+    return new BlobServiceClient(blobServiceUrl, new DefaultAzureCredential());
   }
 
   return null;
