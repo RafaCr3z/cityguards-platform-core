@@ -82,7 +82,7 @@ resource thumbnailContainer 'Microsoft.Storage/storageAccounts/blobServices/cont
 
 /* ── 2. Azure AI Vision (Serviços Cognitivos) ─────────────────────────── */
 
-resource cognitiveService 'Microsoft.CognitiveServices/accounts@2022-10-25' = {
+resource cognitiveService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: cognitiveServiceName
   location: location
   sku: {
@@ -153,8 +153,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
   location: location
   sku: {
-    name: appServiceSku
-    tier: 'Standard'
+    name: appServiceSku // O tier (Free/Shared/Basic/Standard/PremiumV2) é deduzido do nome do SKU
   }
   kind: 'linux'
   properties: {
@@ -172,7 +171,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
-      linuxFxVersion: 'NODE|18-lts'
+      linuxFxVersion: 'NODE|20-lts'
       appSettings: [
         {
           name: 'AZURE_STORAGE_ACCOUNT_NAME'
@@ -232,7 +231,7 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '~18'
+          value: '~20'
         }
         {
           name: 'AI_VISION_ENDPOINT'
