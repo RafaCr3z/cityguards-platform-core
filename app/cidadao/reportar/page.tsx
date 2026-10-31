@@ -56,6 +56,9 @@ export default function ReportOccurrence() {
       return;
     }
 
+    // O localStorage só existe no browser: a página é pré-renderizada no servidor, por isso o
+    // utilizador só pode ser lido depois de montar (ler no useState causaria erro de hidratação)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(userData);
     setMunicipio(userData.municipio); // Município padrão do utilizador
   }, []);
