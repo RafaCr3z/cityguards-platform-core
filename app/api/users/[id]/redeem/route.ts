@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 
+class RedeemError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,36 +22,46 @@ export async function POST(
       );
     }
 
-    const userRef = db.collection("Cidadaos").doc(id);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      return NextResponse.json({ error: "Utilizador não encontrado" }, { status: 404 });
-    }
-
-    const userData = userDoc.data()!;
-    const pontosAtuais = userData.pontosGamificacao || 0;
-
-    if (pontosAtuais < custoPontos) {
+    // Um custo negativo ou não numérico somaria pontos em vez de os descontar
+    if (!Number.isInteger(custoPontos) || custoPontos <= 0) {
       return NextResponse.json(
-        { error: `Pontos insuficientes. Tem ${pontosAtuais} pontos, mas a recompensa custa ${custoPontos}.` },
+        { error: "custoPontos deve ser um número inteiro positivo." },
         { status: 400 }
       );
     }
 
-    const novosPontos = pontosAtuais - custoPontos;
+    const userRef = db.collection("Cidadaos").doc(id);
 
-    // Atualizar no Firestore
-    await userRef.update({
-      pontosGamificacao: novosPontos,
-    });
+    // Transação: evita que dois resgates simultâneos gastem o mesmo saldo
+    const novosPontos = await db.runTransaction(async (tx) => {
+      const userDoc = await tx.get(userRef);
 
-    // Registar a transação na coleção "TrocasRecompensas" para auditabilidade
-    await db.collection("TrocasRecompensas").add({
-      cidadaoId: id,
-      recompensaNome,
-      custoPontos,
-      dataTroca: new Date().toISOString(),
+      if (!userDoc.exists) {
+        throw new RedeemError("Utilizador não encontrado", 404);
+      }
+
+      const pontosAtuais = userDoc.data()!.pontosGamificacao || 0;
+
+      if (pontosAtuais < custoPontos) {
+        throw new RedeemError(
+          `Pontos insuficientes. Tem ${pontosAtuais} pontos, mas a recompensa custa ${custoPontos}.`,
+          400
+        );
+      }
+
+      const saldo = pontosAtuais - custoPontos;
+
+      tx.update(userRef, { pontosGamificacao: saldo });
+
+      // Registar a transação na coleção "TrocasRecompensas" para auditabilidade
+      tx.create(db.collection("TrocasRecompensas").doc(), {
+        cidadaoId: id,
+        recompensaNome,
+        custoPontos,
+        dataTroca: new Date().toISOString(),
+      });
+
+      return saldo;
     });
 
     return NextResponse.json({
@@ -53,6 +69,9 @@ export async function POST(
       novosPontos,
     });
   } catch (error: any) {
+    if (error instanceof RedeemError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Erro ao resgatar recompensa:", error);
     return NextResponse.json({ error: "Falha ao processar o resgate" }, { status: 500 });
   }
