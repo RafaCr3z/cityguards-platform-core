@@ -63,11 +63,14 @@ jobs:
           docker build -t cityguards-app:local .
 
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@master
+        # Fixado por commit SHA (v0.36.0): tags podem ser movidas, um SHA não
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: 'cityguards-app:local'
           format: 'table'
-          exit-code: '0'
+          trivy-config: 'trivy.yaml'
+          # Falhar o pipeline se existirem vulnerabilidades CRITICAL/HIGH com correção disponível
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'

@@ -1,0 +1,3 @@
+# Configuração do Trivy usada pelo CI (.github/workflows/deploy.yml)
+secret:
+  config: trivy-secret.yaml

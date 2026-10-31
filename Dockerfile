@@ -33,6 +33,13 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Hardening: aplicar correções de segurança do Alpine e remover os gestores de pacotes,
+# que a imagem final não usa (só corre "node server.js") e que trazem dependências vulneráveis
+RUN apk upgrade --no-cache \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+            /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
+
 USER nextjs
 
 EXPOSE 3000
