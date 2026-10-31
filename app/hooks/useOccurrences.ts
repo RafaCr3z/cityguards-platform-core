@@ -46,10 +46,12 @@ export function useOccurrences(): AsyncState<Occurrence[]> & { refetch: () => vo
       const mapped: Occurrence[] = rawData.slice(0, 7).map((occ: any) => ({
         id: occ.id,
         title: occ.titulo || `Ocorrência #${occ.id.substring(0, 5)}`,
-        location: occ.localizacao 
+        location: Number.isFinite(occ.localizacao?.latitude) && Number.isFinite(occ.localizacao?.longitude)
           ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
           : "Coordenadas não disponíveis",
-        status: occ.estado || "Pendente",
+        status: (occ.estado === "Em Resolução" || occ.estado === "Resolvida" || occ.estado === "Pendente")
+          ? occ.estado
+          : "Pendente",
         urgency: getUrgency(occ.categoria || ""),
         reportedAt: occ.dataReporte 
           ? new Date(occ.dataReporte).toLocaleDateString("pt-PT")

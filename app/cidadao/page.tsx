@@ -318,7 +318,9 @@ export default function CitizenDashboard() {
                         <div className="mt-1 flex items-center gap-3 text-[10px] text-muted-foreground">
                           <span className="flex items-center gap-0.5">
                             <MapPin size={10} />
-                            Lat: {occ.localizacao.latitude.toFixed(4)} | Lon: {occ.localizacao.longitude.toFixed(4)}
+                            {Number.isFinite(occ.localizacao?.latitude) && Number.isFinite(occ.localizacao?.longitude)
+                              ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
+                              : "Coordenadas não disponíveis"}
                           </span>
                           <span className="flex items-center gap-0.5">
                             <Clock size={10} />

@@ -65,7 +65,7 @@ export function useAllOccurrences(): UseAllOccurrencesReturn {
       const mappedOccurrences: Occurrence[] = rawData.map((occ: any) => ({
         id: occ.id,
         title: occ.titulo || `Ocorrência #${occ.id.substring(0, 5)}`,
-        location: occ.localizacao 
+        location: Number.isFinite(occ.localizacao?.latitude) && Number.isFinite(occ.localizacao?.longitude)
           ? `Lat: ${occ.localizacao.latitude.toFixed(4)} | Lon: ${occ.localizacao.longitude.toFixed(4)}`
           : "Coordenadas não disponíveis",
         status: (occ.estado === "Em Resolução" || occ.estado === "Resolvida" || occ.estado === "Pendente") 
