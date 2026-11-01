@@ -14,6 +14,12 @@
 > **Fault-Tolerant Civic Reporting SaaS with Automated Cloud Infrastructure**  
 > Modular multi-cloud microservices platform with strict transactional control (**ACID**), serverless event workers, automated **Azure AI Vision** moderation, and 100% Infrastructure as Code (**Azure Bicep**) deployed via **Zero-Secret GitHub Actions OIDC**.
 
+<p align="center">
+  <img src="docs/architecture.svg" width="90%" alt="CityGuards multi-cloud architecture: Next.js on Azure App Service, Blob Storage, Azure Functions and GCP Firestore" />
+</p>
+
+> **Deployment status:** this public repository does not have Azure identifiers configured, so on every push the pipeline lints, builds, scans with Trivy and compiles the Bicep template as a **dry run**. Live provisioning via OIDC runs only when `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` are set.
+
 ---
 
 ## 🏛️ System Architecture & Multi-Cloud Topology
